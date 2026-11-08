@@ -1,0 +1,36 @@
+ota:
+  - platform: web_server
+  - platform: esphome
+    password: !secret ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # There is no RTC on this board, so a cold boot with no network means no
+  # time at all. The panel shows four dashes until it has one.
+  ap:
+    ssid: ${friendly_name} Setup
+    password: !secret ap_password
+  # The panel drops the upper colon dot while the network is down, so the
+  # clock tells you its time may be drifting without anyone opening an app.
+  on_connect:
+    - lambda: id(panel)->set_online(true);
+  on_disconnect:
+    - lambda: id(panel)->set_online(false);
+
+captive_portal:
+
+web_server:
+  port: 80
+  version: 3
+  local: true
+  sorting_groups:
+    - id: clock_group
+      name: Clock
+      sorting_weight: 10
+    - id: glucose_group
+      name: Glucose
+      sorting_weight: 20
+  auth:
+    username: admin
+    password: !secret web_password

@@ -1,0 +1,14 @@
+.DS_Store
+**/__pycache__/
+*.py[cod]
+*.swp
+*.swo
+*~
+**/.venv/
+**/venv/
+**/.esphome/
+**/.clock-private/
+**/secrets.yaml
+*.ota.bin
+*.factory.bin
+*.elf

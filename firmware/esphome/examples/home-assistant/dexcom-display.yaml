@@ -1,0 +1,439 @@
+# SucroClock migration: all original automation behavior is preserved.
+# Verify the three clock entity IDs against Home Assistant before enabling.
+# Select Home Assistant as the clock source for this automation to own glucose display.
+alias: SucroClock Dexcom Glucose Display
+description: >
+  Dexcom G7 glucose display for SucroClock with trend glyphs, stale-data
+  handling, IOB display, delta display, automatic brightness, and a brief gentle
+  breathing alert.
+triggers:
+  - trigger: state
+    entity_id: sensor.dexcom_g7_glucose_value
+    id: glucose_update
+  - trigger: state
+    entity_id: sensor.dexcom_g7_glucose_trend
+    id: trend_update
+  - trigger: time_pattern
+    minutes: /1
+    id: periodic
+  - trigger: homeassistant
+    event: start
+    id: startup
+  - trigger: state
+    entity_id: binary_sensor.sucroclock_button_1
+    to: 'on'
+    id: button_1
+  - trigger: state
+    entity_id: binary_sensor.sucroclock_button_2
+    to: 'on'
+    id: button_2
+  - trigger: time
+    at: '07:00:00'
+    id: brightness_day
+  - trigger: time
+    at: '22:00:00'
+    id: brightness_night
+actions:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: glucose_update
+          - condition: template
+            value_template: |
+              {{ trigger.from_state is not none
+                 and trigger.to_state is not none
+                 and trigger.from_state.state
+                     not in ['unknown', 'unavailable', 'none', '']
+                 and trigger.to_state.state
+                     not in ['unknown', 'unavailable', 'none', ''] }}
+        sequence:
+          - action: input_number.set_value
+            target:
+              entity_id: input_number.dexcom_previous_glucose
+            data:
+              value: '{{ trigger.from_state.state | float }}'
+  - choose:
+      - conditions:
+          - condition: trigger
+            id: brightness_day
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: light.sucroclock_display
+            data:
+              brightness_pct: 50
+      - conditions:
+          - condition: trigger
+            id: brightness_night
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: light.sucroclock_display
+            data:
+              brightness_pct: 10
+      - conditions:
+          - condition: trigger
+            id: startup
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: time
+                    after: '07:00:00'
+                    before: '22:00:00'
+                sequence:
+                  - action: light.turn_on
+                    target:
+                      entity_id: light.sucroclock_display
+                    data:
+                      brightness_pct: 50
+            default:
+              - action: light.turn_on
+                target:
+                  entity_id: light.sucroclock_display
+                data:
+                  brightness_pct: 10
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - button_1
+              - button_2
+        sequence:
+          - delay:
+              milliseconds: 150
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: binary_sensor.sucroclock_button_1
+                    state: 'on'
+                  - condition: state
+                    entity_id: binary_sensor.sucroclock_button_2
+                    state: 'on'
+                sequence:
+                  - action: esphome.sucroclock_set_effect
+                    data:
+                      mode: 0
+                      spread: 0
+                      speed: 4
+                      angle: 0
+                      hue_span: 0
+                      flash_fade: 0
+                  - action: esphome.sucroclock_set_digit_color
+                    data:
+                      digit: -1
+                      red: 255
+                      green: 255
+                      blue: 255
+                  - choose:
+                      - conditions:
+                          - condition: template
+                            value_template: |
+                              {{ states('sensor.nightscout_iob')
+                                 not in
+                                 ['unknown', 'unavailable', 'none', ''] }}
+                        sequence:
+                          - variables:
+                              iob: |-
+                                {{ states('sensor.nightscout_iob')
+                                   | float(0)
+                                   | round(0)
+                                   | int }}
+                          - action: esphome.sucroclock_show_number
+                            data:
+                              value: '{{ iob }}'
+                              unit: u
+                              duration: 5000
+                    default:
+                      - action: esphome.sucroclock_set_digit_color
+                        data:
+                          digit: -1
+                          red: 0
+                          green: 0
+                          blue: 0
+                      - action: esphome.sucroclock_set_digit_color
+                        data:
+                          digit: 3
+                          red: 255
+                          green: 255
+                          blue: 255
+                      - action: esphome.sucroclock_show_number
+                        data:
+                          value: 0
+                          unit: '-'
+                          duration: 5000
+                  - delay: '00:00:05'
+              - conditions:
+                  - condition: trigger
+                    id: button_1
+                sequence:
+                  - action: esphome.sucroclock_set_effect
+                    data:
+                      mode: 0
+                      spread: 0
+                      speed: 4
+                      angle: 0
+                      hue_span: 0
+                      flash_fade: 0
+                  - variables:
+                      minutes_since: >-
+                        {% set s = states.sensor.dexcom_g7_glucose_value %} {%
+                        if s is none
+                              or s.state in
+                                 ['unknown', 'unavailable', 'none', ''] %}
+                          999
+                        {% else %}
+                          {{ ((as_timestamp(now()) -
+                               as_timestamp(s.last_updated)) / 60) | int }}
+                        {% endif %}
+                  - variables:
+                      age_red: |-
+                        {% if minutes_since | int < 10 %}
+                          0
+                        {% else %}
+                          255
+                        {% endif %}
+                      age_green: |-
+                        {% if minutes_since | int < 20 %}
+                          255
+                        {% else %}
+                          0
+                        {% endif %}
+                  - action: esphome.sucroclock_set_digit_color
+                    data:
+                      digit: -1
+                      red: '{{ age_red | int }}'
+                      green: '{{ age_green | int }}'
+                      blue: 0
+                  - action: esphome.sucroclock_show_number
+                    data:
+                      value: '{{ minutes_since | int }}'
+                      unit: ''
+                      duration: 5000
+                  - delay: '00:00:05'
+              - conditions:
+                  - condition: trigger
+                    id: button_2
+                sequence:
+                  - action: esphome.sucroclock_set_effect
+                    data:
+                      mode: 0
+                      spread: 0
+                      speed: 4
+                      angle: 0
+                      hue_span: 0
+                      flash_fade: 0
+                  - variables:
+                      current_bg: |-
+                        {{ states('sensor.dexcom_g7_glucose_value')
+                           | float(0) | round(0) | int }}
+                      previous_bg: |-
+                        {{ states('input_number.dexcom_previous_glucose')
+                           | float(0) | round(0) | int }}
+                  - variables:
+                      delta: |-
+                        {{ (current_bg | int) -
+                           (previous_bg | int) }}
+                      delta_abs: |-
+                        {{ ((current_bg | int) -
+                            (previous_bg | int)) | abs }}
+                      delta_indicator: |-
+                        {% if delta | int > 0 %}
+                          {{ '^' }}
+                        {% elif delta | int < 0 %}
+                          {{ '_' }}
+                        {% else %}
+                          {{ '-' }}
+                        {% endif %}
+                      delta_red: |-
+                        {% if current_bg | int < 70 %}
+                          255
+                        {% elif current_bg | int <= 180 %}
+                          0
+                        {% else %}
+                          255
+                        {% endif %}
+                      delta_green: |-
+                        {% if current_bg | int < 70 %}
+                          0
+                        {% elif current_bg | int <= 250 %}
+                          255
+                        {% else %}
+                          0
+                        {% endif %}
+                  - action: esphome.sucroclock_set_digit_color
+                    data:
+                      digit: -1
+                      red: '{{ delta_red | int }}'
+                      green: '{{ delta_green | int }}'
+                      blue: 0
+                  - action: esphome.sucroclock_show_number
+                    data:
+                      value: '{{ delta_abs | int }}'
+                      unit: '{{ delta_indicator }}'
+                      duration: 5000
+                  - delay: '00:00:05'
+  - variables:
+      stale: |-
+        {% set s = states.sensor.dexcom_g7_glucose_value %} {{ s is none
+           or s.state in ['unknown', 'unavailable', 'none', '']
+           or (as_timestamp(now()) -
+               as_timestamp(s.last_updated)) > 1200 }}
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: '{{ stale }}'
+        sequence:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.dexcom_display_alert_active
+          - action: esphome.sucroclock_set_effect
+            data:
+              mode: 0
+              spread: 0
+              speed: 4
+              angle: 0
+              hue_span: 0
+              flash_fade: 0
+          - action: esphome.sucroclock_set_digit_color
+            data:
+              digit: -1
+              red: 0
+              green: 0
+              blue: 0
+          - action: esphome.sucroclock_set_digit_color
+            data:
+              digit: 3
+              red: 255
+              green: 255
+              blue: 255
+          - action: esphome.sucroclock_show_number
+            data:
+              value: 0
+              unit: '-'
+              duration: 600000
+    default:
+      - variables:
+          bg: |-
+            {{ states('sensor.dexcom_g7_glucose_value')
+               | float(0) | round(0) | int }}
+          trend: '{{ states(''sensor.dexcom_g7_glucose_trend'') }}'
+          indicator: |-
+            {% if trend == 'rising_quickly' %}
+              {{ '>' }}
+            {% elif trend in ['rising', 'rising_slightly'] %}
+              {{ '^' }}
+            {% elif trend == 'falling_quickly' %}
+              {{ '<' }}
+            {% elif trend in ['falling', 'falling_slightly'] %}
+              {{ '_' }}
+            {% else %}
+              {{ '-' }}
+            {% endif %}
+      - variables:
+          alert: |-
+            {{ bg | int < 70
+               or bg | int > 250
+               or trend in
+                  ['rising_quickly', 'falling_quickly'] }}
+      - variables:
+          bg_red: |-
+            {% if bg | int < 70 %}
+              255
+            {% elif bg | int <= 180 %}
+              0
+            {% else %}
+              255
+            {% endif %}
+          bg_green: |-
+            {% if bg | int < 70 %}
+              0
+            {% elif bg | int <= 250 %}
+              192
+            {% else %}
+              0
+            {% endif %}
+      - action: esphome.sucroclock_set_effect
+        data:
+          mode: 0
+          spread: 0
+          speed: 4
+          angle: 0
+          hue_span: 0
+          flash_fade: 0
+      - action: esphome.sucroclock_set_digit_color
+        data:
+          digit: -1
+          red: '{{ bg_red | int }}'
+          green: '{{ bg_green | int }}'
+          blue: 0
+      - action: esphome.sucroclock_show_number
+        data:
+          value: '{{ bg | int }}'
+          unit: '{{ indicator }}'
+          duration: 600000
+      - choose:
+          - conditions:
+              - condition: template
+                value_template: '{{ alert }}'
+              - condition: state
+                entity_id: input_boolean.dexcom_display_alert_active
+                state: 'off'
+            sequence:
+              - action: input_boolean.turn_on
+                target:
+                  entity_id: input_boolean.dexcom_display_alert_active
+              - action: esphome.sucroclock_set_digit_color
+                data:
+                  digit: -1
+                  red: 255
+                  green: 0
+                  blue: 0
+              - action: esphome.sucroclock_set_effect
+                data:
+                  mode: 2
+                  spread: 0
+                  speed: 4
+                  angle: 0
+                  hue_span: 0
+                  flash_fade: 2
+              - delay: '00:00:15'
+              - action: esphome.sucroclock_set_effect
+                data:
+                  mode: 0
+                  spread: 0
+                  speed: 4
+                  angle: 0
+                  hue_span: 0
+                  flash_fade: 0
+              - action: esphome.sucroclock_set_digit_color
+                data:
+                  digit: -1
+                  red: 255
+                  green: 0
+                  blue: 0
+          - conditions:
+              - condition: template
+                value_template: '{{ alert }}'
+              - condition: state
+                entity_id: input_boolean.dexcom_display_alert_active
+                state: 'on'
+            sequence:
+              - action: esphome.sucroclock_set_effect
+                data:
+                  mode: 0
+                  spread: 0
+                  speed: 4
+                  angle: 0
+                  hue_span: 0
+                  flash_fade: 0
+              - action: esphome.sucroclock_set_digit_color
+                data:
+                  digit: -1
+                  red: 255
+                  green: 0
+                  blue: 0
+        default:
+          - action: input_boolean.turn_off
+            target:
+              entity_id: input_boolean.dexcom_display_alert_active
+mode: restart

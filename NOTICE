@@ -1,0 +1,11 @@
+SucroClock incorporates and extends Adrian Black's HU-058_ESPHome project:
+https://github.com/misterblack1/HU-058_ESPHome
+
+The original display component, hardware research and documentation remain
+attributed to their upstream author. The original LICENSE is retained without
+change. Third-party provider names identify compatible services; this project
+is not presented as an official product of those providers. Third-party
+libraries and reference materials retain their respective licenses/notices.
+
+The SucroClock icon was generated for this project using the built-in image_gen
+tool. Source artwork and the final generation prompt are included in assets.

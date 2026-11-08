@@ -65,5 +65,5 @@ SucroClock builds on **Adrian Black's HU-058_ESPHome project** and AiP33628 disp
 component. His hardware research, wiring instructions, upstream README and
 license are retained. See [NOTICE](NOTICE), [LICENSE](LICENSE), and the
 [upstream project](https://github.com/misterblack1/HU-058_ESPHome).
-The SucroClock icon was generated for this project; its prompt and source artwork
+The SucroClock icon was generated for this project; its prompt and icon assets
 are in `firmware/esphome/assets/`.

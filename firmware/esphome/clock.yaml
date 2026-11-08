@@ -1,0 +1,6 @@
+packages:
+  core: !include clock-core.yaml
+  network: !include packages/network.yaml
+  cgm: !include packages/cgm.yaml
+  secure_setup: !include packages/secure-setup.yaml
+  controls: !include packages/controls.yaml

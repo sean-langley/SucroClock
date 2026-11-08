@@ -1,0 +1,43 @@
+clock_controls:
+  id: clock_control_panel
+  panel_id: panel
+  light_id: display
+  cgm_id: glucose_connector
+  additional_id: other_glucose_connector
+  switches:
+    twelve_hour: twelve_hour_mode
+    blink: colon_blink
+  selects:
+    source: glucose_source
+    mode: glucose_display_mode
+    region: dexcom_region
+    effect: effect_mode
+    spread: effect_spread
+    unit: test_unit
+  numbers:
+    speed: effect_speed
+    angle: effect_angle
+    hue_span: effect_hue_span
+    flash_fade: fx_flash_fade
+    test_number: test_number
+  buttons:
+    lamp_test: clock_lamp_test
+    seconds: clock_seconds
+    digit_demo: clock_digit_demo
+    clear_colors: clock_clear_colors
+    gradient: clock_gradient
+  binary_sensors:
+    top: button_1
+    bottom: button_2
+    dx_fresh: dx_fresh
+    other_fresh: other_fresh
+  sensors:
+    dx_glucose: dexcom_glucose
+    dx_age: dx_age
+    other_glucose: other_glucose
+    other_age: other_age
+  text_sensors:
+    dx_trend: dx_trend
+    dx_time: dx_time
+    other_trend: other_trend
+    other_time: other_time

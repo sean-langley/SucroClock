@@ -1,0 +1,219 @@
+clock_cgm:
+  id: glucose_connector
+  panel_id: panel
+  username: !secret dexcom_username
+  password: !secret dexcom_password
+  glucose:
+    name: Dexcom Glucose
+    web_server:
+      sorting_group_id: glucose_group
+    id: dexcom_glucose
+  age:
+    name: Dexcom Reading Age
+    web_server:
+      sorting_group_id: glucose_group
+    id: dx_age
+    entity_category: diagnostic
+  status:
+    name: Glucose Source Status
+    web_server:
+      sorting_group_id: glucose_group
+    entity_category: diagnostic
+  trend:
+    name: Dexcom Trend
+    web_server:
+      sorting_group_id: glucose_group
+    id: dx_trend
+  measurement_time:
+    name: Dexcom Measurement Time
+    web_server:
+      sorting_group_id: glucose_group
+    id: dx_time
+    entity_category: diagnostic
+  valid:
+    name: Dexcom Reading Fresh
+    web_server:
+      sorting_group_id: glucose_group
+    id: dx_fresh
+    entity_category: diagnostic
+
+esphome:
+  on_boot:
+    - priority: -110
+      then:
+        - lambda: |-
+            id(glucose_connector).set_region(id(dexcom_region).current_option());
+            std::string source = id(glucose_source).current_option();
+            std::string mode = id(glucose_display_mode).current_option();
+            id(glucose_display_mode).make_call().set_option(mode).perform();
+            id(glucose_connector).set_source(source);
+            id(other_glucose_connector).set_source(source);
+
+select:
+  - platform: template
+    id: glucose_source
+    name: Glucose Source
+    web_server:
+      sorting_group_id: glucose_group
+    optimistic: true
+    restore_value: true
+    initial_option: Home Assistant
+    options:
+      - Home Assistant
+      - Dexcom Share
+      - LibreLinkUp
+      - Nightscout
+      - SugarSense
+    set_action:
+      - lambda: |-
+          id(glucose_connector).set_source(x);
+          id(other_glucose_connector).set_source(x);
+  - platform: template
+    id: dexcom_region
+    name: Dexcom Region
+    web_server:
+      sorting_group_id: glucose_group
+    optimistic: true
+    restore_value: true
+    initial_option: US
+    options:
+      - US
+      - Outside US
+      - Japan
+    set_action:
+      - lambda: id(glucose_connector).set_region(x);
+  - platform: template
+    id: dexcom_display_mode
+    name: Dexcom Display Mode
+    web_server:
+      sorting_group_id: glucose_group
+      sorting_weight: 1000
+    optimistic: true
+    restore_value: true
+    initial_option: Preview
+    options:
+      - Preview
+      - Display
+    set_action:
+      - lambda: |-
+          if (id(glucose_mode_sync)) return;
+          id(glucose_mode_sync) = true;
+          if (id(dexcom_display_mode).current_option() != x) id(dexcom_display_mode).make_call().set_option(x).perform();
+          if (id(other_display_mode).current_option() != x) id(other_display_mode).make_call().set_option(x).perform();
+          if (id(glucose_display_mode).current_option() != x) id(glucose_display_mode).make_call().set_option(x).perform();
+          id(glucose_connector).set_display_mode(x);
+          id(other_glucose_connector).set_display_mode(x);
+          id(glucose_mode_sync) = false;
+
+  - platform: template
+    id: other_display_mode
+    name: Direct Provider Display Mode
+    web_server:
+      sorting_group_id: glucose_group
+      sorting_weight: 1000
+    optimistic: true
+    restore_value: true
+    initial_option: Preview
+    options:
+      - Preview
+      - Display
+    set_action:
+      - lambda: |-
+          if (id(glucose_mode_sync)) return;
+          id(glucose_mode_sync) = true;
+          if (id(dexcom_display_mode).current_option() != x) id(dexcom_display_mode).make_call().set_option(x).perform();
+          if (id(other_display_mode).current_option() != x) id(other_display_mode).make_call().set_option(x).perform();
+          if (id(glucose_display_mode).current_option() != x) id(glucose_display_mode).make_call().set_option(x).perform();
+          id(glucose_connector).set_display_mode(x);
+          id(other_glucose_connector).set_display_mode(x);
+          id(glucose_mode_sync) = false;
+
+  - platform: template
+    id: glucose_display_mode
+    name: Glucose Display Mode
+    web_server:
+      sorting_group_id: glucose_group
+    optimistic: true
+    restore_value: true
+    initial_option: Preview
+    options: [Preview, Display]
+    set_action:
+      - lambda: |-
+          if (id(glucose_mode_sync)) return;
+          id(glucose_mode_sync) = true;
+          if (id(dexcom_display_mode).current_option() != x) id(dexcom_display_mode).make_call().set_option(x).perform();
+          if (id(other_display_mode).current_option() != x) id(other_display_mode).make_call().set_option(x).perform();
+          if (id(glucose_display_mode).current_option() != x) id(glucose_display_mode).make_call().set_option(x).perform();
+          id(glucose_connector).set_display_mode(x);
+          id(other_glucose_connector).set_display_mode(x);
+          id(glucose_mode_sync) = false;
+globals:
+  - id: glucose_mode_sync
+    type: bool
+    restore_value: false
+    initial_value: 'false'
+
+button:
+  - platform: template
+    name: Glucose Retry Connection
+    web_server:
+      sorting_group_id: glucose_group
+    on_press:
+      - lambda: |-
+          std::string source = id(glucose_source).current_option();
+          if (source == "Dexcom Share") id(glucose_connector).retry();
+          else if (source == "LibreLinkUp" || source == "Nightscout" || source == "SugarSense") id(other_glucose_connector).retry();
+  - platform: template
+    name: Dexcom Retry Connection
+    web_server:
+      sorting_group_id: glucose_group
+      sorting_weight: 1000
+    entity_category: config
+    on_press:
+      - lambda: id(glucose_connector).retry();
+
+  - platform: template
+    name: Direct Provider Retry Connection
+    web_server:
+      sorting_group_id: glucose_group
+      sorting_weight: 1000
+    entity_category: config
+    on_press:
+      - lambda: id(other_glucose_connector).retry();
+
+additional_cgm:
+  id: other_glucose_connector
+  panel_id: panel
+  glucose:
+    name: Direct Provider Glucose
+    web_server:
+      sorting_group_id: glucose_group
+    id: other_glucose
+  age:
+    name: Direct Provider Reading Age
+    web_server:
+      sorting_group_id: glucose_group
+    id: other_age
+    entity_category: diagnostic
+  status:
+    name: Direct Provider Status
+    web_server:
+      sorting_group_id: glucose_group
+    entity_category: diagnostic
+  trend:
+    name: Direct Provider Trend
+    web_server:
+      sorting_group_id: glucose_group
+    id: other_trend
+  measurement_time:
+    name: Direct Provider Measurement Time
+    web_server:
+      sorting_group_id: glucose_group
+    id: other_time
+    entity_category: diagnostic
+  valid:
+    name: Direct Provider Reading Fresh
+    web_server:
+      sorting_group_id: glucose_group
+    id: other_fresh
+    entity_category: diagnostic

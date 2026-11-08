@@ -1,0 +1,20 @@
+clock_setup:
+  id: secure_clock_setup
+  controls_id: clock_control_panel
+  additional_id: other_glucose_connector
+  source_id: glucose_source
+  cgm_id: glucose_connector
+  region_id: dexcom_region
+  certificate: .clock-private/https-cert.pem
+  private_key: .clock-private/https-key.pem
+  auth_password: !secret setup_password
+  fingerprint:
+    name: HTTPS Certificate Fingerprint
+    web_server:
+      sorting_group_id: glucose_group
+    entity_category: diagnostic
+  setup_url:
+    name: Web Interface URL
+    web_server:
+      sorting_group_id: glucose_group
+    entity_category: diagnostic

@@ -511,6 +511,7 @@ void Aip33628Panel::show_seconds(int ms) {
 }
 
 void Aip33628Panel::set_direct_display(bool enabled) {
+  if (direct_display_ != enabled) dirty_ = true;
   if (enabled && !direct_display_ && mode_ == Mode::NUMBER && provider_owner_ == 0) {
     mode_ = Mode::TIME;
     dirty_ = true;
@@ -536,7 +537,13 @@ bool Aip33628Panel::show_provider_number(int value, const std::string &unit, uin
   if (mode_ != Mode::TIME && provider_owner_ == 0)
     return false;
   bool changed_owner=provider_owner_!=owner;
-  number_=value;unit_=unit.empty()?'\0':unit[0];mode_=Mode::NUMBER;mode_until_=millis()+2000;provider_owner_=owner;dirty_=true;
+  const char glyph = unit.empty() ? '\0' : unit[0];
+  const bool changed = changed_owner || mode_ != Mode::NUMBER || number_ != value || unit_ != glyph;
+  number_ = value;
+  unit_ = glyph;
+  mode_ = Mode::NUMBER;
+  provider_owner_ = owner;
+  dirty_ = dirty_ || changed;
   if(changed_owner)apply_colors_();
   return true;
 }
@@ -755,9 +762,11 @@ void Aip33628Panel::loop() {
     update_effect_(now_ms);
   }
 
-  // A temporary mode expires here rather than anywhere else, so there is one
-  // place that can put the panel back to being a clock.
-  if (mode_ != Mode::TIME && (int32_t) (now_ms - mode_until_) >= 0) {
+  // Only manual/temporary displays have a deadline. Provider coordinators
+  // explicitly clear their display when a reading goes stale or its source
+  // changes. A short provider lease could expire after a busy update and show
+  // the time for one loop before the coordinator refreshes the reading.
+  if (provider_owner_ == 0 && mode_ != Mode::TIME && (int32_t) (now_ms - mode_until_) >= 0) {
     bool was_lamp = mode_ == Mode::LAMP;
     bool was_provider = provider_owner_ != 0;
     provider_owner_ = 0;
@@ -817,6 +826,15 @@ void Aip33628Panel::loop() {
   // A pushed number does not need the clock to be set, so it comes first.
   if (mode_ == Mode::NUMBER) {
     draw_number_(number_, unit_);
+    render_();
+    return;
+  }
+
+  // Direct-provider Display mode without a usable number shows a dash,
+  // never clock digits with leftover per-digit colors. Temporary displays
+  // still take priority; source/preview changes restore the normal clock.
+  if (direct_display_ && mode_ == Mode::TIME) {
+    write_digit_(3, '-');
     render_();
     return;
   }

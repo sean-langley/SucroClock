@@ -7,7 +7,7 @@ esphome:
   friendly_name: ${friendly_name}
   project:
     name: sucroclock.sucroclock
-    version: "0.1.0-dev"
+    version: "0.1.1-dev"
   # Template numbers and selects restore their value by publishing it, which
   # does not fire their set_action, so a restored effect would show in the UI
   # and do nothing. Push the lot into the component once everything is up.

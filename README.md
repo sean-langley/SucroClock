@@ -37,7 +37,7 @@ An optional [Home Assistant automation example](firmware/esphome/examples/home-a
 
 ## Project status
 
-**0.1.0-dev — development preview.** Dexcom has been exercised on hardware.
+**0.1.1-dev — development preview.** Dexcom has been exercised on hardware.
 LibreLinkUp/Nightscout use protocol and coordinator tests; live accounts have not
 been verified in this project. SugarSense pairing is implemented and tested with
 fixtures; live account pairing remains unverified. Provider APIs can change.

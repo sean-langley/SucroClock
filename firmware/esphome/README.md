@@ -75,3 +75,11 @@ provider accounts.
 Keep `secrets.yaml`, `.clock-private/`, local builds and environments private.
 A compiled device image embeds credentials and its HTTPS key: **do not publish it**.
 The public distribution is source plus example settings, with per-device builds.
+
+### Display fixes in 0.1.1-dev
+
+Direct-provider Display mode shows a single white `-` while a reading is missing
+or stale, and automatically restores glucose when a fresh reading arrives.
+Provider-owned readings no longer expire on a short display timer during busy
+updates. Preview, Home Assistant, and temporary button displays keep their
+existing behavior. See the root changelog for validation and remaining limits.

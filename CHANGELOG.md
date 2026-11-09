@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.1-dev — display fixes (2026-11-09)
+
+- Show a single dash when a direct provider has no usable reading, including
+  startup, stale data, and unconfigured sources, instead of falling back to time.
+
+- Keep direct-provider glucose visible across delayed updates, avoiding a brief
+  return to the time. Freshness/source checks still clear the provider display;
+  temporary button displays retain their normal timeout.
+- Avoid redrawing unchanged provider values and trend glyphs every second.
+
+Validation: firmware compiled and all eight host suites passed. Both fixes were
+installed over Wi-Fi. The owner confirmed the white dash for unavailable Dexcom
+data; the brief-time-flash fix still awaits explicit visual confirmation across
+a reading update. LibreLinkUp, Nightscout and SugarSense live tests remain pending.
+
 ## 0.1.0-dev — initial development preview
 
 SucroClock turns the HU-058D RGB clock into a local, provider-independent glucose

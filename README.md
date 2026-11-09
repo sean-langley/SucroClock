@@ -2,11 +2,11 @@
 
 ![SucroClock](firmware/esphome/assets/sucroclock-icon-192.png)
 
-**Your glucose, at a glance.**
+**Glucose at a glance.**
 
 An open-source ESP32 glucose clock for the HU-058D display. It connects directly
 to your glucose provider and offers local web controls, configurable colors,
-trend glyphs and firmware updates over Wi-Fi. Home Assistant is optional.
+trend glyphs and firmware updates over Wi-Fi. Home Assistant is suppored but optional.
 
 ## Features
 
@@ -29,7 +29,7 @@ trend glyphs and firmware updates over Wi-Fi. Home Assistant is optional.
 3. Open **https://sucroclock.local:8443/**, configure a provider, then select its
    source and **Display** mode. A provider test alone leaves the source unchanged.
 
-Updating an existing Clock-O-Rama installation? Read the
+Updating an existing installation based on Adrian Black's original implementation? Read the
 [migration guide](firmware/esphome/docs/MIGRATION.md) first: the hostname,
 certificate and Home Assistant action prefixes change.
 

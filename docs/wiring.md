@@ -1,5 +1,9 @@
 # Wiring an ESP32 into the clock
 
+**Buy a separate ESP32 development board. The ESP8266 / ESP-01S included
+with the Wi-Fi clock kit cannot run SucroClock.** The supplied configuration
+uses a classic ESP32-WROOM-32 (`esp32dev`); see [buying notes](buying-hardware.md).
+
 The kit ships as loose parts. The display half is already assembled on the
 front of the board, so what you solder is the through-hole side, and the
 easiest conversion is simply not installing the parts you are replacing.

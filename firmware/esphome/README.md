@@ -1,5 +1,9 @@
 # SucroClock firmware
 
+**Buy a separate ESP32 development board. The ESP8266 / ESP-01S included
+with the Wi-Fi clock kit cannot run SucroClock.** The supplied configuration
+uses a classic ESP32-WROOM-32 (`esp32dev`); see [buying notes](../../docs/buying-hardware.md).
+
 Tested build tool: **ESPHome 2026.9.1**, with Python 3.12 and `cryptography`.
 The target is the existing ESP32/Arduino HU-058D wiring. Keep the hardware current
 limit and pin mapping appropriate for your board; see [wiring](../../docs/wiring.md).

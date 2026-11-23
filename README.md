@@ -25,6 +25,25 @@ trend glyphs and firmware updates over Wi-Fi. Home Assistant is suppored but opt
 
 *Interface preview using sample glucose data.*
 
+## Buying the hardware
+
+**You must buy a separate ESP32 development board to run SucroClock. The
+ESP8266 / ESP-01S supplied with the Wi-Fi clock kit cannot run this firmware.**
+The kit supplies the display, enclosure and clock PCB; convert it using the
+[wiring guide](docs/wiring.md). This is a DIY build, not a ready-made glucose clock.
+
+| Store | Base clock kit | Listing notes |
+| --- | --- | --- |
+| Amazon US | [Segrehy ESP8266 WiFi Clock Kit (white)](https://www.amazon.com/dp/B0FCCG11XB) | Listing opened and advertised in stock on 2026-11-22; exact PCB revision has not been physically verified. |
+| AliExpress | [HU-058D / ESP8266 IoT Colorful WiFi Clock Kit](https://www.aliexpress.us/item/3256807371597845.html) | Original listing linked by Adrian's hardware documentation; currently unavailable for the location used during our 2026-11-22 check. Availability varies by destination. |
+
+Also buy a **classic ESP32-WROOM-32 development board** exposing GPIO18, GPIO19,
+GPIO21, GPIO22, GPIO32 and GPIO33 for the supplied `esp32dev` configuration.
+ESP32-C3/S2/S3 boards are not drop-in replacements for this wiring/configuration.
+Check the seller's board photos/model before ordering: similar-looking clock
+kits may use different electronics. Prices, stock and shipping can change.
+See [buying notes](docs/buying-hardware.md) for variants and link provenance.
+
 ## Start here
 
 1. Check the [hardware and wiring](docs/wiring.md). This firmware targets an ESP32

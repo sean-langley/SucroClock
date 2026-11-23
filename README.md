@@ -8,6 +8,10 @@ An open-source ESP32 glucose clock for the HU-058D display. It connects directly
 to your glucose provider and offers local web controls, configurable colors,
 trend glyphs and firmware updates over Wi-Fi. Home Assistant is suppored but optional.
 
+![Rendered SucroClock with green sample glucose reading and two black side buttons](docs/images/sucroclock-render.jpg)
+
+*Rendered illustration using sample data; the final built device may differ slightly.*
+
 ## Features
 
 - Separate Dexcom Share, LibreLinkUp, Nightscout, SugarSense and Home Assistant sources.

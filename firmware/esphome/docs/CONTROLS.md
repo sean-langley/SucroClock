@@ -21,4 +21,21 @@ The standard ESPHome HTTP page remains as a fallback with the existing HTTP logi
 
 The dashboard is self-contained, authenticated HTTPS and uses the existing CSP/CSRF/no-store protections. Its /api/control endpoint accepts only a fixed allowlist of clock/glucose controls with typed, bounded values. Hardware changes are queued to the ESPHome main loop and use the existing native light, switch, select, number and button actions. It never executes arbitrary actions or exposes stored credentials. Inputs start disabled until status has loaded, and changes wait for an acknowledgement from the clock.
 
-The HA API/actions, native and browser OTA, fallback AP, provider clients, display driver, glyphs and scan timing are unchanged. This task did not add alarms, new glucose thresholds or an automatic fallback policy.
+Existing HA API/actions, native and browser OTA, fallback AP and provider clients remain available. The shared panel adds a lower-dot decimal layout for direct-provider mmol/L values; glyphs and scan timing are retained.
+
+## Glucose display units
+
+Select **mg/dL** or **mmol/L** under Glucose → Glucose units. The setting is
+saved on the device and also appears as **Glucose Display Units** in ESPHome/HA.
+It applies to all direct providers. mmol/L is rounded to one decimal place: 108
+mg/dL shows as ` 6.0` followed by the trend glyph; 221 mg/dL shows as `12.3`
+followed by the trend glyph. The lower colon dot is steady and the upper dot is
+off. Missing/stale data retains the single dash, without a decimal dot.
+
+The reading, range inputs, blend width and color-range labels follow the selected
+unit. Range limits use one decimal in mmol/L; blend width uses two. Provider data,
+diagnostic sensors and stored thresholds remain in mg/dL internally. Unchanged
+rounded fields retain their exact stored values, so switching units does not
+shift thresholds. Edited mmol/L limits are rounded to the nearest whole mg/dL
+when saved. Existing Home Assistant show-number
+actions and temporary clock tools are not converted. Default is mg/dL.

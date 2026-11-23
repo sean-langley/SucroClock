@@ -9,7 +9,7 @@ parser=argparse.ArgumentParser();parser.add_argument('--output',type=Path,requir
 repo=Path(__file__).resolve().parents[3]
 roots=['README.md','CHANGELOG.md','LICENSE','NOTICE','.gitignore','docs','reference','firmware/esphome/README.md','firmware/esphome/DEXCOM.md','firmware/esphome/.gitignore','firmware/esphome/clock.yaml','firmware/esphome/clock-core.yaml','firmware/esphome/secrets.yaml.example','firmware/esphome/requirements-build.txt','firmware/esphome/components','firmware/esphome/packages','firmware/esphome/tools','firmware/esphome/tests','firmware/esphome/examples','firmware/esphome/docs','firmware/esphome/assets']
 blocked={'.git','.clock-private','.esphome','.venv','venv','__pycache__'}
-suffixes={'.md','.txt','.py','.h','.cpp','.yaml','.yml','.json','.png','.jpg','.jpeg','.gif','.svg','.pdf','.sh'}
+suffixes={'.md','.txt','.py','.h','.cpp','.yaml','.yml','.json','.png','.jpg','.jpeg','.gif','.svg','.pdf','.sh','.mjs'}
 external_references={'docs/images/schematic-hu058d.jpg','reference/AiP33628_icbase.pdf','firmware/esphome/assets/sucroclock-icon-original.png'}
 files={}
 for item in roots:

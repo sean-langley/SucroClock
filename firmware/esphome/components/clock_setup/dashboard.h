@@ -14,16 +14,16 @@ static const char DASHBOARD_PAGE[]=R"page(<!doctype html>
 <details><summary>Effect settings</summary><label>Spread<select id="spread"></select></label><div class="two"><label>Speed (seconds)<input id="speed" type="number"></label><label>Angle (degrees)<input id="angle" type="number"></label><label>Hue span<input id="hue_span" type="number"></label><label>Flash fade (seconds)<input id="flash_fade" type="number"></label></div></details>
 <details><summary>Clock tools</summary><div class="two buttons"><button data-button="seconds">Show seconds</button><button data-button="lamp_test">Lamp test</button><button data-button="digit_demo">Digit color demo</button><button data-button="clear_colors">Clear digit colors</button><button data-button="gradient">Diagonal gradient</button></div><div class="two"><label>Test number<input id="test_number" type="number"></label><label>Test unit<select id="unit"></select></label></div><p class="caption" id="physicalButtons"></p></details>
 </section>
-<section class="card" aria-labelledby="glucoseTitle"><h2 id="glucoseTitle">Glucose</h2><div class="reading"><span id="value">—</span><span class="unit">mg/dL</span></div><p class="caption" id="trend">No reading available</p><span id="freshness" class="badge">Waiting for status</span><p class="caption" id="age"></p><p class="caption" id="readingStatus"></p>
-<label>Glucose source<select id="source"></select></label><label>Display mode<select id="mode"></select></label><small>Preview checks readings without showing them on the clock. Display shows glucose directly; Home Assistant is optional.</small>
+<section class="card" aria-labelledby="glucoseTitle"><h2 id="glucoseTitle">Glucose</h2><div class="reading"><span id="value">—</span><span class="unit" id="readingUnit">mg/dL</span></div><p class="caption" id="trend">No reading available</p><span id="freshness" class="badge">Waiting for status</span><p class="caption" id="age"></p><p class="caption" id="readingStatus"></p>
+<label>Glucose source<select id="source"></select></label><label>Display mode<select id="mode"></select></label><label>Glucose units<select id="glucose_units"></select></label><small>mmol/L uses the lower colon dot as a steady decimal point. Applies to direct providers; Home Assistant controls its own numbers.</small><small>Preview checks readings without showing them on the clock. Display shows glucose directly; Home Assistant is optional.</small>
 <button id="retry">Retry connection</button><div class="links"><a href="/setup">Provider setup</a></div><details><summary>Reading details</summary><small id="measurementTime">No measurement timestamp</small></details>
 <details id="rangesDetails"><summary>Ranges &amp; colors</summary><form id="styleForm">
 <small class="hint">Applies to fresh direct-provider readings in Display mode. Clock brightness stays independent.</small>
 <div class="row"><label for="styleEnabled">Use glucose colors</label><input id="styleEnabled" type="checkbox"></div>
 <label>Color transitions<select id="styleMode"><option value="bands">HA color bands</option><option value="smooth">Smooth blending</option></select></label>
-<div class="style-grid"><label>Low limit<input id="styleLow" type="number" min="20" max="598" step="1" required></label><label>Target high<input id="styleTarget" type="number" min="21" max="599" step="1" required></label><label>High limit<input id="styleHigh" type="number" min="22" max="600" step="1" required></label></div><small>Limits are mg/dL and must increase from left to right.</small>
+<div class="style-grid"><label>Low limit<input id="styleLow" type="number" min="20" max="598" step="1" required></label><label>Target high<input id="styleTarget" type="number" min="21" max="599" step="1" required></label><label>High limit<input id="styleHigh" type="number" min="22" max="600" step="1" required></label></div><small id="rangeUnitsHint">Limits are mg/dL and must increase from left to right.</small>
 <div class="palette"><label><span id="lowColorLabel">Low</span><input id="styleColor0" type="color"></label><label><span id="targetColorLabel">Target</span><input id="styleColor1" type="color"></label><label><span id="highColorLabel">High</span><input id="styleColor2" type="color"></label><label><span id="veryHighColorLabel">Above high limit</span><input id="styleColor3" type="color"></label></div>
-<label id="blendBox" hidden>Blend width (mg/dL)<input id="styleBlend" type="number" min="0.1" max="50" step="0.1" required></label>
+<label id="blendBox" hidden><span id="blendLabel">Blend width (mg/dL)</span><input id="styleBlend" type="number" min="0.1" max="50" step="0.1" required></label>
 <small id="blendHint" hidden>Blends stay inside the configured ranges. Rapid-trend color still takes priority.</small>
 <div class="row"><label for="styleRapid">Rapid-trend alert color</label><input id="styleRapid" type="checkbox"></div>
 <label>Rapid-trend color<input id="styleColor4" type="color"></label><small>Overrides the range color during an enabled rapid-trend alert. Low/high alerts use their configured range colors.</small>
@@ -34,33 +34,91 @@ static const char DASHBOARD_PAGE[]=R"page(<!doctype html>
 </form><p class="caption" id="styleApplied"></p></details>
 </section></main><p id="message" role="status"></p><footer class="links"><a href="/setup">Provider credentials</a><a id="esphomeLink" href="http://sucroclock.local/">ESPHome controls &amp; firmware update</a></footer>
 <script nonce="@TOKEN@">
-'use strict';const csrf='@TOKEN@';const $=id=>document.getElementById(id);let current=null;let lightDirty=false;let pending=false;let initialized=false;let styleDirty=false;
+'use strict';const csrf='@TOKEN@';const $=id=>document.getElementById(id);let current=null;let lightDirty=false;let pending=false;let initialized=false;let styleDirty=false;let styleUnits='mg/dL';let rangeDraft=null;
 function busy(value){for(const e of document.querySelectorAll('main input,main select,main button'))e.disabled=value;if(!value&&current)$('retry').disabled=current.selects.source.value==='Home Assistant';}
 const nativeUrl=new URL(window.location.href);nativeUrl.protocol='http:';nativeUrl.port='';nativeUrl.pathname='/';nativeUrl.search='';nativeUrl.hash='';$('esphomeLink').href=nativeUrl.href;
 busy(true);
 function setValue(id,value){if(document.activeElement!==$(id))$(id).value=value;}
 function selectValue(id,s){if(!s)return;const el=$(id);if(JSON.stringify(Array.from(el.options).map(o=>o.value))!==JSON.stringify(s.options)){el.replaceChildren(...s.options.map(v=>new Option(v,v)));}if(document.activeElement!==el)el.value=s.value;}
-function rangeLabels(){const low=$('styleLow').value,target=$('styleTarget').value,high=$('styleHigh').value;$('lowColorLabel').textContent='Below '+low;$('targetColorLabel').textContent=low+'–'+target;$('highColorLabel').textContent='Above '+target+' through '+high;$('veryHighColorLabel').textContent='Above '+high;const smooth=$('styleMode').value==='smooth';$('blendBox').hidden=!smooth;$('blendHint').hidden=!smooth;}
-function fillStyle(s){if(!s)return;if(!styleDirty){$('styleEnabled').checked=s.enabled;$('styleMode').value=s.smooth?'smooth':'bands';setValue('styleLow',s.low);setValue('styleTarget',s.target_high);setValue('styleHigh',s.high);setValue('styleBlend',s.blend_width);setValue('styleDuration',s.alert_seconds);setValue('stylePeriod',s.period_seconds);$('styleRapid').checked=s.rapid;$('styleBreathing').checked=s.breathing;for(let i=0;i<5;i++)setValue('styleColor'+i,s.colors[i]);}rangeLabels();$('styleApplied').textContent=s.applied?('Panel color: '+s.applied_color+(s.breathing_active?' · breathing alert':s.alert_active?' · alert':'')):(s.inactive_reason||'Waiting for glucose display status.');}
+// BEGIN UNIT CONVERSION HELPERS
+const GlucoseUnits={
+ format(value,unit,blend=false){return unit==='mmol/L'?(value/18).toFixed(blend?2:1):String(value);},
+ read(value,unit,previous,blend=false){
+  if(!Number.isFinite(value))return NaN;
+  // A rounded presentation is not an edit. Preserve the exact stored value.
+  if(value===Number(this.format(previous,unit,blend)))return previous;
+  if(unit!=='mmol/L')return value;
+  return blend?Math.min(50,Math.round(value*1800)/100):Math.round(value*18);
+ },
+ fields:[['styleLow','low',20,598],['styleTarget','target_high',21,599],['styleHigh','high',22,600],['styleBlend','blend_width',.1,50]]
+};
+// END UNIT CONVERSION HELPERS
+function captureRanges(){
+ if(!rangeDraft)return false;
+ const next={...rangeDraft};
+ for(const [id,key] of GlucoseUnits.fields){
+  const value=$(id).valueAsNumber;
+  if(!Number.isFinite(value))return false;
+  next[key]=GlucoseUnits.read(value,styleUnits,rangeDraft[key],key==='blend_width');
+ }
+ rangeDraft=next;return true;
+}
+function renderRanges(unit){
+ if(!rangeDraft)return;
+ const changed=styleUnits!==unit;styleUnits=unit;
+ for(const [id,key,min,max] of GlucoseUnits.fields){
+  const e=$(id),blend=key==='blend_width';
+  e.min=GlucoseUnits.format(min,unit,blend);e.max=GlucoseUnits.format(max,unit,blend);
+  e.step=unit==='mmol/L'?(blend?'.01':'.1'):(blend?'.1':'1');
+  const value=GlucoseUnits.format(rangeDraft[key],unit,blend);
+  if(changed)e.value=value;else setValue(id,value);
+ }
+}
+function rangeLabels(){
+ const unit=styleUnits,low=$('styleLow').value,target=$('styleTarget').value,high=$('styleHigh').value;
+ $('rangeUnitsHint').textContent='Limits are '+unit+' and must increase from left to right.';
+ $('blendLabel').textContent='Blend width ('+unit+')';
+ $('lowColorLabel').textContent='Below '+low+' '+unit;
+ $('targetColorLabel').textContent=low+'–'+target+' '+unit;
+ $('highColorLabel').textContent='Above '+target+' through '+high+' '+unit;
+ $('veryHighColorLabel').textContent='Above '+high+' '+unit;
+ const smooth=$('styleMode').value==='smooth';$('blendBox').hidden=!smooth;$('blendHint').hidden=!smooth;
+}
+function fillStyle(s){
+ if(!s)return;
+ const unit=current.selects.glucose_units.value;
+ if(!styleDirty){
+  rangeDraft={low:s.low,target_high:s.target_high,high:s.high,blend_width:s.blend_width};
+  $('styleEnabled').checked=s.enabled;$('styleMode').value=s.smooth?'smooth':'bands';
+  renderRanges(unit);setValue('styleDuration',s.alert_seconds);setValue('stylePeriod',s.period_seconds);
+  $('styleRapid').checked=s.rapid;$('styleBreathing').checked=s.breathing;
+  for(let i=0;i<5;i++)setValue('styleColor'+i,s.colors[i]);
+ }else if(styleUnits!==unit){
+  if(captureRanges())renderRanges(unit);
+  else $('message').textContent='Finish the incomplete range field to convert your unsaved ranges.';
+ }
+ rangeLabels();$('styleApplied').textContent=s.applied?('Panel color: '+s.applied_color+(s.breathing_active?' · breathing alert':s.alert_active?' · alert':'')):(s.inactive_reason||'Waiting for glucose display status.');
+}
 async function refresh(){try{const response=await fetch('/api/status',{cache:'no-store'});if(!response.ok)throw Error('Could not read clock status.');const state=await response.json();current=state.controls;if(!current)throw Error('Control panel is not ready.');$('connection').textContent='Connected';fillStyle(current.style);if(!initialized){initialized=true;busy(false);}
 if(!lightDirty){$('power').checked=current.light.state;setValue('brightness',current.light.brightness);$('brightnessLabel').value=current.light.brightness+'%';setValue('color',current.light.color);}
 for(const id of ['twelve_hour','blink'])if(document.activeElement!==$(id))$(id).checked=current.switches[id];
-for(const id of ['source','mode','effect','spread','unit'])selectValue(id,current.selects[id]);
+for(const id of ['source','mode','glucose_units','effect','spread','unit'])selectValue(id,current.selects[id]);
 for(const id of ['speed','angle','hue_span','flash_fade','test_number']){const n=current.numbers[id];$(id).min=n.min;$(id).max=n.max;$(id).step=n.step;setValue(id,n.value);}
-const r=current.reading,ha=current.selects.source.value==='Home Assistant';$('value').textContent=r.fresh&&Number.isFinite(r.value)?Math.round(r.value):'—';$('trend').textContent=ha?'Home Assistant controls the display':(r.trend||'No reading available');$('freshness').textContent=ha?'Home Assistant':r.fresh?'Fresh reading':'No fresh reading';$('freshness').className='badge'+(r.fresh?' fresh':'');$('age').textContent=Number.isFinite(r.age)?'Measurement age: '+r.age.toFixed(1)+' min':'';$('readingStatus').textContent=r.status;$('measurementTime').textContent=r.time||'No measurement timestamp';$('retry').disabled=ha||pending;$('physicalButtons').textContent='Button 1: '+(current.buttons.top?'pressed':'released')+' · Button 2: '+(current.buttons.bottom?'pressed':'released');
+const r=current.reading,ha=current.selects.source.value==='Home Assistant';$('readingUnit').textContent=r.unit||'mg/dL';const mmol=r.unit==='mmol/L';$('value').textContent=r.fresh&&Number.isFinite(r.display_value)?(mmol?r.display_value.toFixed(1):Math.round(r.display_value)):'—';$('trend').textContent=ha?'Home Assistant controls the display':(r.trend||'No reading available');$('freshness').textContent=ha?'Home Assistant':r.fresh?'Fresh reading':'No fresh reading';$('freshness').className='badge'+(r.fresh?' fresh':'');$('age').textContent=Number.isFinite(r.age)?'Measurement age: '+r.age.toFixed(1)+' min':'';$('readingStatus').textContent=r.status;$('measurementTime').textContent=r.time||'No measurement timestamp';$('retry').disabled=ha||pending;$('physicalButtons').textContent='Button 1: '+(current.buttons.top?'pressed':'released')+' · Button 2: '+(current.buttons.bottom?'pressed':'released');
 }catch(e){$('connection').textContent='Connection interrupted';$('message').textContent=e.message;}}
 async function control(payload){if(pending||!current)return false;let success=false;pending=true;busy(true);const revision=current.revision;try{const response=await fetch('/api/control',{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':csrf},body:JSON.stringify(payload)});if(!response.ok)throw Error((await response.json()).error||'Could not update control.');$('message').textContent='Applying…';for(let attempt=0;attempt<8;attempt++){await new Promise(resolve=>setTimeout(resolve,300));await refresh();if(current.revision!==revision)break;}if(current.revision===revision)throw Error('Waiting for the clock to confirm the change.');$('message').textContent=current.message;success=!current.message.startsWith('Could not');}catch(e){$('message').textContent=e.message;}finally{pending=false;busy(false);}return success;}
 for(const id of ['power','brightness','color'])$(id).addEventListener('input',()=>{lightDirty=true;$('brightnessLabel').value=$('brightness').value+'%';});
 $('applyDisplay').addEventListener('click',async()=>{if(await control({kind:'light',state:$('power').checked,brightness:Number($('brightness').value),color:$('color').value}))lightDirty=false;refresh();});
 for(const id of ['twelve_hour','blink'])$(id).addEventListener('change',()=>control({kind:'switch',id:id,value:$(id).checked}));
-for(const id of ['source','mode','effect','spread','unit'])$(id).addEventListener('change',()=>control({kind:'select',id:id,value:$(id).value}));
+for(const id of ['source','mode','glucose_units','effect','spread','unit'])$(id).addEventListener('change',()=>control({kind:'select',id:id,value:$(id).value}));
 for(const id of ['speed','angle','hue_span','flash_fade','test_number'])$(id).addEventListener('change',()=>{if($(id).checkValidity())control({kind:'number',id:id,value:Number($(id).value)});else $(id).reportValidity();});
 for(const button of document.querySelectorAll('[data-button]'))button.addEventListener('click',()=>control({kind:'button',id:button.dataset.button}));
 $('retry').addEventListener('click',()=>control({kind:'retry'}));
 $('styleForm').addEventListener('input',()=>{styleDirty=true;rangeLabels();});$('styleMode').addEventListener('change',()=>{styleDirty=true;rangeLabels();});
 $('styleForm').addEventListener('submit',async e=>{e.preventDefault();if(!$('styleForm').reportValidity())return;
-const low=Number($('styleLow').value),target=Number($('styleTarget').value),high=Number($('styleHigh').value),width=Number($('styleBlend').value),smooth=$('styleMode').value==='smooth';
-if(!(low<target&&target<high)){ $('message').textContent='Limits must increase: low < target high < high.';return;}
+if(!captureRanges())return;
+const low=rangeDraft.low,target=rangeDraft.target_high,high=rangeDraft.high,width=rangeDraft.blend_width,smooth=$('styleMode').value==='smooth';
+if(!(low<target&&target<high)){ $('message').textContent='Limits must increase and remain distinct after conversion: low < target high < high.';return;}
 if(smooth&&width>Math.min(target-low,high-target)/2){$('message').textContent='Blend width must be no more than half the smallest range gap.';return;}
 const payload={kind:'style',enabled:$('styleEnabled').checked,smooth:smooth,low:low,target_high:target,high:high,blend_width:width,rapid:$('styleRapid').checked,breathing:$('styleBreathing').checked,alert_seconds:Number($('styleDuration').value),period_seconds:Number($('stylePeriod').value),colors:Array.from({length:5},(_,i)=>$('styleColor'+i).value)};
 if(await control(payload))styleDirty=false;refresh();});

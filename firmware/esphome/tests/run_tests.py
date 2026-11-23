@@ -16,6 +16,7 @@ component = root.parent / "components/clock_cgm"
 cxx = os.environ.get("CXX", "clang++")
 with tempfile.TemporaryDirectory(prefix="clock-cgm-tests-") as folder:
     for name, sources, stubs in [
+        ("glucose_digits", [root / "glucose_digits_test.cpp"], False),
         ("style", [root / "glucose_style_test.cpp"], False),
         ("sugarsense", [root / "sugarsense_test.cpp", component / "sugarsense_client.cpp"], False),
         ("commands", [root / "control_commands_test.cpp"], False),

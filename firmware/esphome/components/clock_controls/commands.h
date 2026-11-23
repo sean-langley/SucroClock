@@ -46,6 +46,7 @@ inline bool parse_command(const std::string &body,Command &c){
   else if(id=="effect")valid=one_of(value,{"None","Color Cycle","Flash"});
   else if(id=="spread")valid=one_of(value,{"Whole Panel","Per Digit","Per LED"});
   else if(id=="unit")valid=one_of(value,{"None","F","C"});
+  else if(id=="glucose_units")valid=one_of(value,{"mg/dL","mmol/L"});
   else if(id=="region")valid=one_of(value,{"US","Outside US","Japan"});
   if(!valid||value.size()>=sizeof(c.text))return false;std::memcpy(c.text,value.c_str(),value.size()+1);
  }

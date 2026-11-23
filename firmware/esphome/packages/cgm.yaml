@@ -51,6 +51,16 @@ esphome:
 
 select:
   - platform: template
+    id: glucose_units
+    name: Glucose Display Units
+    web_server:
+      sorting_group_id: glucose_group
+    optimistic: true
+    restore_value: true
+    initial_option: mg/dL
+    options: [mg/dL, mmol/L]
+
+  - platform: template
     id: glucose_source
     name: Glucose Source
     web_server:

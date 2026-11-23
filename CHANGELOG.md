@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.2.0-dev — glucose units and ranges (2026-11-22)
+
+- Make the glucose range editor, blend width, input bounds and color-range
+  labels follow the selected unit; preserve exact stored thresholds through
+  unit switches and saves of unchanged rounded fields.
+
+- Add a saved mg/dL / mmol/L selector for direct-provider glucose display and
+  the local dashboard. mmol/L uses one decimal place with only the lower colon
+  dot, retaining the trend glyph in the fourth digit.
+- Keep raw readings, diagnostic sensors, color/alert thresholds, Home Assistant
+  show-number actions, temporary displays and unavailable-data dash behavior.
+- Add conversion/layout coverage across the supported 20–600 mg/dL range and
+  command validation for the new selector.
+
+Validation: nine C++ host suites and the JavaScript range-editor tests passed.
+Firmware compiled, installed over Wi-Fi and passed its successful-boot check.
+Live checks verified preservation of source, mode, units, exact thresholds,
+colors and alerts. The owner confirmed the unit-aware interface works.
+The updated dashboard screenshot uses sample glucose data.
+
 ## 0.1.1-dev — display fixes (2026-11-09)
 
 - Show a single dash when a direct provider has no usable reading, including

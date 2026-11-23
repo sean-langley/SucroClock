@@ -825,7 +825,15 @@ void Aip33628Panel::loop() {
 
   // A pushed number does not need the clock to be set, so it comes first.
   if (mode_ == Mode::NUMBER) {
-    draw_number_(number_, unit_);
+    if (provider_owner_ != 0 && glucose_mmol_) {
+      const auto frame = mmol_digits(number_, unit_);
+      for (int i = 0; i < 4; ++i) write_digit_(i, frame.digits[i]);
+      // Lower colon dot only: the fixed separator between digits 2 and 3.
+      // It remains steady, independently of clock colon blink or Wi-Fi state.
+      if (frame.lower_decimal) write_pos_(1, SEG_ANNUN2, true);
+    } else {
+      draw_number_(number_, unit_);
+    }
     render_();
     return;
   }

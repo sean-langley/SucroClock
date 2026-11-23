@@ -10,6 +10,7 @@ clock_controls:
   selects:
     source: glucose_source
     mode: glucose_display_mode
+    glucose_units: glucose_units
     region: dexcom_region
     effect: effect_mode
     spread: effect_spread

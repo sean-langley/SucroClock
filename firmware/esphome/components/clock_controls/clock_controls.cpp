@@ -17,6 +17,7 @@ void ClockControls::update_style_(){
  std::string trend=texts_.at(prefix+"_trend")->state;
  bool direct=source!="Home Assistant"&&selects_.at("mode")->current_option()=="Display";
  panel_->set_direct_display(direct);
+ panel_->set_glucose_mmol(selects_.at("glucose_units")->current_option()=="mmol/L");
  style_frame_=style_engine_.update(style_,direct,fresh,std::isfinite(value)?int(std::lround(value)):0,trend=="Double up"||trend=="Double down",source,millis());
  panel_->set_glucose_color(style_frame_.active,style_frame_.color.r,style_frame_.color.g,style_frame_.color.b,style_frame_.envelope);
 }
@@ -64,7 +65,11 @@ void ClockControls::snapshot(JsonObject root){
  for(const auto &entry:numbers_){auto value=root["numbers"][entry.first].to<JsonObject>();value["value"]=entry.second->state;value["min"]=entry.second->traits.get_min_value();value["max"]=entry.second->traits.get_max_value();value["step"]=entry.second->traits.get_step();}
  for(const auto &entry:binary_)root["buttons"][entry.first]=entry.second->state;
  std::string source=selects_.at("source")->current_option();std::string prefix=source=="Dexcom Share"?"dx":"other";bool direct=source!="Home Assistant";
+ const bool mmol=selects_.at("glucose_units")->current_option()=="mmol/L";
  auto reading=root["reading"].to<JsonObject>();reading["fresh"]=direct&&binary_.at(prefix+"_fresh")->state;
+ reading["unit"]=mmol?"mmol/L":"mg/dL";
+ float raw=sensors_.at(prefix+"_glucose")->state;
+ reading["display_value"]=direct&&std::isfinite(raw)?(mmol?aip33628::glucose_mmol_tenths(int(std::lround(raw)))/10.0f:raw):NAN;
  if(direct){reading["value"]=sensors_.at(prefix+"_glucose")->state;reading["age"]=sensors_.at(prefix+"_age")->state;reading["trend"]=texts_.at(prefix+"_trend")->state;reading["time"]=texts_.at(prefix+"_time")->state;}
  reading["status"]=source=="Dexcom Share"?cgm_->setup_status():source=="Home Assistant"?std::string("Managed by Home Assistant"):other_->status();
 }

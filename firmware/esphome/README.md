@@ -87,3 +87,9 @@ or stale, and automatically restores glucose when a fresh reading arrives.
 Provider-owned readings no longer expire on a short display timer during busy
 updates. Preview, Home Assistant, and temporary button displays keep their
 existing behavior. See the root changelog for validation and remaining limits.
+
+Range-editor JavaScript regression checks (with Node.js installed):
+
+```sh
+node tests/glucose_units_test.mjs
+```

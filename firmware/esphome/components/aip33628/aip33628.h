@@ -1,4 +1,5 @@
 #pragma once
+#include "glucose_digits.h"
 
 #include "esphome/core/component.h"
 #include "esphome/core/hal.h"
@@ -131,6 +132,9 @@ class Aip33628Panel : public Component {
   void show_number(int value, const std::string &unit, int ms);
   // Direct providers retain priority over long HA glucose holds; short tools still work.
   void set_direct_display(bool enabled);
+  void set_glucose_mmol(bool enabled) {
+    if (glucose_mmol_ != enabled) { glucose_mmol_ = enabled; dirty_ = true; }
+  }
   bool show_provider_number(int value, const std::string &unit, uint8_t owner = 1);
   void clear_provider_number(uint8_t owner = 1);
   void set_glucose_color(bool enabled,float red,float green,float blue,float envelope);
@@ -241,6 +245,7 @@ class Aip33628Panel : public Component {
   volatile uint8_t wait_{0};  // ticks left before the next step is latched
 
   bool direct_display_{false};
+  bool glucose_mmol_{false};
   bool glucose_color_enabled_{false};
   float glucose_rgb_[3]{1,1,1};
   float glucose_envelope_{1};

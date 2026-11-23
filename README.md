@@ -16,14 +16,14 @@ trend glyphs and firmware updates over Wi-Fi. Home Assistant is suppored but opt
 
 - Separate Dexcom Share, LibreLinkUp, Nightscout, SugarSense and Home Assistant sources.
 - Local HTTPS setup and controls; provider credentials stored on the clock.
-- Adjustable glucose ranges/colors, optional smooth blending and brief breathing alerts.
+- mg/dL or mmol/L readings and range controls; adjustable colors, smooth blending and brief breathing alerts.
 - Preview/Display modes, freshness checks and explicit source selection.
 - Clock effects, brightness, buttons and custom trend glyphs.
 - Browser OTA, native ESPHome OTA and fallback Wi-Fi provisioning.
 
-![SucroClock web interface](docs/images/sucroclock-dashboard.png)
+![SucroClock web interface with mmol/L readings and ranges](docs/images/sucroclock-dashboard-mmol.png)
 
-*Interface preview using sample glucose data.*
+*Interface preview using sample glucose data, with mmol/L readings and range controls.*
 
 ## Buying the hardware
 
@@ -60,14 +60,17 @@ An optional [Home Assistant automation example](firmware/esphome/examples/home-a
 
 ## Project status
 
-**0.1.1-dev — development preview.** Dexcom has been exercised on hardware.
+**0.2.0-dev — development preview.** Dexcom has been exercised on hardware.
 LibreLinkUp/Nightscout use protocol and coordinator tests; live accounts have not
 been verified in this project. SugarSense pairing is implemented and tested with
 fixtures; live account pairing remains unverified. Provider APIs can change.
 This is a secondary display; readings may be delayed or unavailable. It does not
 replace the provider's app, alarms or treatment tools.
 
-The physical display shows integer mg/dL. SugarSense currently displays the
+The physical display can show integer mg/dL or one-decimal mmol/L. In mmol/L
+mode, the lower colon dot is the decimal separator and the fourth digit retains
+the trend glyph. Select **Glucose units** in the Glucose section; direct-provider
+readings are converted for display, and the range editor, blend width and range labels follow the selected unit. SugarSense currently displays the
 paired account's own reading, not Care Circle selections. The clock's configured
 colors apply independently of provider account ranges.
 
